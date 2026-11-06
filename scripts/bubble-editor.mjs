@@ -53,7 +53,8 @@ export const X = {
   field: (key, next) => ({ "%x": "Message", "%nm": key, ...(next ? { "%n": next } : {}) }),
   equals: (arg) => ({ "%x": "Message", "%nm": "equals", "%a": arg }),
   or: (arg) => ({ "%x": "Message", "%nm": "or_", "%a": arg }),
-  option: (set, value) => ({ "%x": "OptionValue", "%p": { "option_set": set, "option_value": value } }),
+  // set = option set key (e.g. "role"), value = the option's db_value (e.g. "admin")
+  option: (set, value) => ({ "%x": "OneOptionValue", "%p": { option_set: `option.${set}`, option_value: value } }),
 };
 
 // Field key the editor derives from a display name and type, e.g. ("author","custom.author") → author_custom_author
