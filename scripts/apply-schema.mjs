@@ -50,7 +50,7 @@ const TYPES = {
   book: {
     name: "Book",
     fields: [
-      ["book_code", T.text], ["author", "custom.author"], ["owner", "user"], ["title", T.text], ["isbn", T.text],
+      ["book_code", T.text], ["author", "custom.author"], ["owner_email", T.text], ["title", T.text], ["isbn", T.text],
       ["genre", T.text], ["stage", "option.book_stage"], ["status_text", T.text], ["is_published", T.bool],
       ["publication_date", T.date], ["mrp", T.num], ["royalty_per_copy", T.num],
       ["print_partner", "option.print_partner"], ["available_on", "list.option.platform"],
@@ -60,7 +60,7 @@ const TYPES = {
   },
   payout: {
     name: "Payout",
-    fields: [["author", "custom.author"], ["owner", "user"], ["book", "custom.book"], ["amount", T.num],
+    fields: [["author", "custom.author"], ["owner_email", T.text], ["book", "custom.book"], ["amount", T.num],
       ["payout_date", T.date], ["note", T.text], ["is_backfill", T.bool]],
   },
   notificationlog: {
@@ -69,7 +69,7 @@ const TYPES = {
       ["author", "custom.author"], ["triggered_by", "user"], ["mode", T.text], ["status", "option.notify_status"],
       ["requested_at", T.date], ["completed_at", T.date], ["email_subject", T.text], ["email_body", T.text],
       ["email_sent", T.bool], ["email_recipient", T.text], ["error_message", T.text],
-      ["n8n_execution_id", T.text], ["model", T.text], ["tokens_used", T.num],
+      ["n8n_execution_id", T.text], ["model", T.text], ["tokens_used", T.num], ["in_flight", T.bool],
     ],
   },
   appsetting: { name: "AppSetting", fields: [["as_of_date", T.date], ["last_recalc_at", T.date]] },
@@ -111,6 +111,9 @@ if (import.meta.url === pathToFileURL(process.argv[1]).href) {
   // Remove the probe option value/attribute created by hand while learning the editor's format.
   await write(page, [[["option_sets", "role", "values", "bTGLo"], null], [["option_sets", "role", "attributes", "is_admin"], null]]);
   await write(page, changes);
+  // Ownership moved from a User link to the author's email (Free plan: accounts are claimed by signing
+  // up with the email on file, so there is no server-side step that could link a User).
+  await write(page, ["book", "payout"].map((t) => [["user_types", t, "%f3", "owner_user"], null]));
   const [types, sets] = await read(page, [["user_types"], ["option_sets"]]);
   for (const [k, t] of Object.entries(TYPES)) {
     const have = Object.keys(types[k]?.["%f3"] ?? {});

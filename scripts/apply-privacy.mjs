@@ -5,14 +5,15 @@ import { pathToFileURL } from "node:url";
 import { editorPage, write, read, X } from "./bubble-editor.mjs";
 
 const isAdmin = X.currentUser(X.field("role_option_role", X.equals(X.option("role", "admin"))));
-const thisFieldIsMe = (field) => X.thisThing(X.field(field, X.equals(X.currentUser())));
+// Ownership by email: "This Book's owner_email is Current User's email".
+const thisFieldIsMyEmail = (field) => X.thisThing(X.field(field, X.equals(X.currentUser(X.field("email")))));
 const full = { view_all: true, search_for: true, view_attachments: true, auto_binding: false };
 
 const RULES = {
   user: [["users_own_data", "User's own data", X.thisThing(X.equals(X.currentUser()))]],
-  author: [["author_own_profile", "Author sees own profile", thisFieldIsMe("user_user")]],
-  book: [["author_own_books", "Author sees own books", thisFieldIsMe("owner_user")]],
-  payout: [["author_own_payouts", "Author sees own payouts", thisFieldIsMe("owner_user")]],
+  author: [["author_own_profile", "Author sees own profile", thisFieldIsMyEmail("email_text")]],
+  book: [["author_own_books", "Author sees own books", thisFieldIsMyEmail("owner_email_text")]],
+  payout: [["author_own_payouts", "Author sees own payouts", thisFieldIsMyEmail("owner_email_text")]],
   notificationlog: [],
   appsetting: [],
 };
