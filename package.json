@@ -1,1 +1,1 @@
-{"type":"module","private":true,"name":"bookleaf-royalty","scripts":{"build":"node scripts/build-workflow.mjs","test":"node --test n8n/test/"}}
+{"type":"module","private":true,"name":"bookleaf-royalty","scripts":{"build":"node scripts/build-workflow.mjs","test":"node --test n8n/test/"},"devDependencies":{"playwright-core":"^1.48.2"}}
