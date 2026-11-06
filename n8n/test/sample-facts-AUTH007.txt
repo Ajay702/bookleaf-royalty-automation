@@ -1,0 +1,15 @@
+Today: 6 November 2026
+Author: Sneha Kulkarni (first name Sneha), Bangalore, with BookLeaf since 18 September 2022
+Published books: 2; books in production: 1
+Published book: "The Algorithm of Love" — Romance, published 25 December 2022, MRP ₹299, ₹25 royalty per copy
+  1567 copies sold; royalty earned ₹39,175, paid ₹35,000, pending ₹4,175; last payout 15 November 2025; status: Overdue
+  Available on: Amazon India, Flipkart, Amazon US, BookLeaf Store
+Published book: "Ctrl+Alt+Delete My Ex" — Romance / Humor, published 14 February 2024, MRP ₹350, ₹30 royalty per copy
+  723 copies sold; royalty earned ₹21,690, paid ₹18,000, pending ₹3,690; last payout 15 October 2025; status: Overdue
+  Available on: Amazon India, Flipkart, BookLeaf Store
+In production: "Midnight in Mysore" is in production: stage 3 of 9 (Cover Design); the next stage is Typesetting. No sales or royalties yet.
+Account totals (published books): earned ₹60,865, paid ₹53,000, pending ₹7,865
+Most recent payout on any book: 15 November 2025
+Royalty cycle: royalties are calculated quarterly and paid within 45 days of quarter end. The next payout deadline is 14 November 2026 (for Q3 2026, which ends 30 September 2026). The most recent deadline that has already passed was 14 August 2026 (for Q2 2026).
+Payout history: ₹35,000 on 15 November 2025 for "The Algorithm of Love"
+SCENARIO: OVERDUE — royalties are pending and the last payout (or, for never-paid books, the publication date) is more than 90 days ago. This is late on BookLeaf's side: own it, apologise, and commit that the finance team will review and confirm the payout within 48 hours. Ask the author to confirm their bank account is linked in the dashboard.

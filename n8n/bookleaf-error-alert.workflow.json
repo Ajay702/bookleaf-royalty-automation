@@ -1,0 +1,60 @@
+{
+  "name": "BookLeaf · Automation error alert",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "e0000000-0000-4000-8000-000000000001",
+      "name": "Error Trigger",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "fromEmail": "BookLeaf Automations <REPLACE@example.com>",
+        "toEmail": "REPLACE-ops-inbox@example.com",
+        "subject": "=n8n failure: {{ $json.workflow.name }}",
+        "emailFormat": "text",
+        "text": "=Workflow: {{ $json.workflow.name }}\nFailed node: {{ $json.execution.lastNodeExecuted }}\nError: {{ $json.execution.error.message }}\nExecution: {{ $json.execution.url }}\n\nAny Notification Log row still 'Processing' for this run will show as 'Timed out' in Bubble after 10 minutes and can be retried.",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "e0000000-0000-4000-8000-000000000002",
+      "name": "Email ops team",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        240,
+        0
+      ],
+      "credentials": {
+        "smtp": {
+          "id": "REPLACE_smtp",
+          "name": "SMTP account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "Email ops team",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "active": false
+}
