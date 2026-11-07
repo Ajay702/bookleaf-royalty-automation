@@ -8,15 +8,21 @@ const template = JSON.stringify({
   author: { name: "<author_name>", email: "<author_email>", city: "<author_city>", joined_date: "<joined_date>" },
   books: "<books>", payouts: "<payouts>",
 }).replace(/"<(author_name|author_email|author_city|books|payouts)>"/g, "<$1>");
+// Sample values used when the call is (re)initialized in the editor: one real book, so n8n answers with a
+// full Success reply and Bubble learns every response field.
+const SAMPLE_BOOK = { title: "Whispers of the Ganges", genre: "Literary Fiction", status: "Published & Live",
+  publication_date: "2023-06-20", mrp: 399, royalty_per_copy: 35, copies_sold: 342, royalty_earned: 11970,
+  royalty_paid: 8400, royalty_pending: 3570, last_payout_date: "2025-10-15", available_on: ["Amazon India", "Flipkart"] };
 const params = [
-  ["log_id", "test-log"], ["author_id", "test-author"], ["mode", "single"], ["triggered_by", "admin@bookleaf.test"],
+  ["log_id", "init-call"], ["author_id", "init-call"], ["mode", "single"], ["triggered_by", "admin@bookleaf.test"],
   ["as_of", "2026-11-07"], ["author_name", '"Priya Sharma"'], ["author_email", '"priya.sharma@email.com"'],
-  ["author_city", '"Mumbai"'], ["joined_date", "2023-03-15"], ["books", '"[]"'], ["payouts", '"[]"'],
+  ["author_city", '"Mumbai"'], ["joined_date", "2023-03-15"], ["books", JSON.stringify(JSON.stringify([SAMPLE_BOOK]))], ["payouts", '"[]"'],
 ];
-const field = (name, type) => [`_api_c2_${name}`, { ret_btype: type, caption: name, path: [name] }];
+// "Include errors in response" makes Bubble nest the reply under body.* (keys as the editor's Initialize writes them).
+const field = (name, type) => [`_api_c2_body.${name}`, { ret_btype: type, caption: `body ${name}`, path: ["body", name] }];
 const fields = Object.fromEntries([
   field("status", "text"), field("subject", "text"), field("body", "text"), field("email_sent", "boolean"),
-  field("email_recipient", "text"), field("error_message", "text"), field("completed_at", "date"), field("model", "text"),
+  field("email_recipient", "text"), field("error_message", "text"), field("completed_at", "text"), field("model", "text"),
   field("tokens_used", "number"), field("execution_id", "text"), field("failed_step", "text"), field("duplicate_of", "text"),
   ["_api_c2_returned_an_error", { ret_btype: "boolean", caption: "returned_an_error", path: ["returned_an_error"] }],
   ["_api_c2_error.status_code", { ret_btype: "number", caption: "error status_code", path: ["error", "status_code"] }],

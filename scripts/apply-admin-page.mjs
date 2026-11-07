@@ -285,23 +285,26 @@ const bookJson = T(
 const booksPayload = chain({ "%x": "ArbitraryText", is_slidable: false,
   "%p": { arbitrary_text: T("[", chain(search("book", [["author_custom_author", "equals", author]]), formatAsText(bookJson)), "]") } }, jsonSafe);
 const call = "adm_wf_send_summary_a2";
-const res = (f) => chain(step(call), `_api_c2_${f}`);
+// With "Include errors in response" on, Bubble nests the parsed reply under body.*; the error fields sit beside it.
+const res = (f) => chain(step(call), /^(error\.|returned_an_error)/.test(f) ? `_api_c2_${f}` : `_api_c2_body.${f}`);
 wf("adm_wf_send_summary", "Send summary via n8n", "CustomEvent", {
   "%en": "send_summary",
   parameters: { 0: { param_id: "author", param_name: "author", btype_id: "custom.author", is_list: false, optional: false },
     1: { param_id: "mode", param_name: "mode", btype_id: "text", is_list: false, optional: false } },
 }, [
-  create("notificationlog", [["author_custom_author", author], ["triggered_by_user", me()], ["mode_text", T(wfParam("mode"))],
-    ["status_option_notify_status", opt("notify_status", "processing")], ["requested_at_date", now()], ["in_flight_boolean", true]],
-  chain(inFlight(author), eq(0))),
+  // Duplicate check runs first: Bubble evaluates each "only when" after the previous step, so checking
+  // after creating the Processing log would always find one in flight and log a false Duplicate.
   create("notificationlog", [["author_custom_author", author], ["triggered_by_user", me()], ["mode_text", T(wfParam("mode"))],
     ["status_option_notify_status", opt("notify_status", "duplicate")], ["requested_at_date", now()], ["completed_at_date", now()],
     ["in_flight_boolean", false], ["error_message_text", T("Skipped: a summary for this author is already being generated.")]],
   chain(inFlight(author), gt(0))),
+  create("notificationlog", [["author_custom_author", author], ["triggered_by_user", me()], ["mode_text", T(wfParam("mode"))],
+    ["status_option_notify_status", opt("notify_status", "processing")], ["requested_at_date", now()], ["in_flight_boolean", true]],
+  chain(inFlight(author), eq(0))),
   { "%x": "apiconnector2-n8n.trigger_summary", "%p": {
-    "%c": chain(step("adm_wf_send_summary_a0"), "is_not_empty"),
+    "%c": chain(step("adm_wf_send_summary_a1"), "is_not_empty"),
     "headers_Content-Type": T("application/json"),
-    body_params_log_id: T(chain(step("adm_wf_send_summary_a0"), "_id")),
+    body_params_log_id: T(chain(step("adm_wf_send_summary_a1"), "_id")),
     body_params_author_id: T(chain(author, "_id")),
     body_params_mode: T(wfParam("mode")),
     body_params_triggered_by: T(chain(me(), "email")),
@@ -313,23 +316,23 @@ wf("adm_wf_send_summary", "Send summary via n8n", "CustomEvent", {
     body_params_books: T(booksPayload),
     body_params_payouts: T('"[]"'),
   } },
-  change(step("adm_wf_send_summary_a0"), [
+  change(step("adm_wf_send_summary_a1"), [
     ["status_option_notify_status", opt("notify_status", "success")], ["email_subject_text", T(res("subject"))],
     ["email_body_text", T(res("body"))], ["email_sent_boolean", res("email_sent")], ["email_recipient_text", T(res("email_recipient"))],
     ["error_message_text", T(res("error_message"))], ["completed_at_date", now()], ["model_text", T(res("model"))],
     ["tokens_used_number", res("tokens_used")], ["n8n_execution_id_text", T(res("execution_id"))], ["in_flight_boolean", false],
-  ], chain(step("adm_wf_send_summary_a0"), "is_not_empty", and(chain(res("status"), eq(T("Success")))))), // an HTTP error leaves status empty
-  change(step("adm_wf_send_summary_a0"), [
-    ["status_option_notify_status", opt("notify_status", "failed")], ["error_message_text", T(res("failed_step"), ": ", res("error_message"))],
+  ], chain(step("adm_wf_send_summary_a1"), "is_not_empty", and(chain(res("status"), eq(T("Success")))))), // an HTTP error leaves status empty
+  change(step("adm_wf_send_summary_a1"), [
+    ["status_option_notify_status", opt("notify_status", "failed")], ["error_message_text", T(res("error_message"))],
     ["completed_at_date", now()], ["n8n_execution_id_text", T(res("execution_id"))], ["in_flight_boolean", false],
-  ], chain(step("adm_wf_send_summary_a0"), "is_not_empty", and(chain(res("status"), "is_not_empty", and(chain(res("status"), neq(T("Success")))))))),
-  change(step("adm_wf_send_summary_a0"), [
+  ], chain(step("adm_wf_send_summary_a1"), "is_not_empty", and(chain(res("status"), "is_not_empty", and(chain(res("status"), neq(T("Success")))))))),
+  change(step("adm_wf_send_summary_a1"), [
     ["status_option_notify_status", opt("notify_status", "failed")],
     ["error_message_text", T("n8n request failed (HTTP ", res("error.status_code"), "): ", res("error.body"))],
     ["completed_at_date", now()], ["in_flight_boolean", false],
-  ], chain(step("adm_wf_send_summary_a0"), "is_not_empty", and(res("returned_an_error")))),
-  change(step("adm_wf_send_summary_a0"), [["status_option_notify_status", opt("notify_status", "duplicate")]],
-    chain(step("adm_wf_send_summary_a0"), "is_not_empty", and(chain(res("error.status_code"), eq(409))))),
+  ], chain(step("adm_wf_send_summary_a1"), "is_not_empty", and(res("returned_an_error")))),
+  change(step("adm_wf_send_summary_a1"), [["status_option_notify_status", opt("notify_status", "duplicate")]],
+    chain(step("adm_wf_send_summary_a1"), "is_not_empty", and(chain(res("error.status_code"), eq(409))))),
 ]);
 
 // ── write ────────────────────────────────────────────────────────────────────

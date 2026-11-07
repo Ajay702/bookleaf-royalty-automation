@@ -39,3 +39,21 @@ export async function listThings(page, type, keep = []) {
   page.off("response", onResponse);
   return [...found.values()];
 }
+
+// Bubble's database stores a link to another record as "<app db id>__LOOKUP__<record id>". upload_thing
+// accepts a bare id without complaint but then stores a string no search will ever match, so links
+// must be written in this form.
+export const APP_DB_ID = "1348695171700984260";
+export const ref = (id) => (String(id).includes("__LOOKUP__") ? id : `${APP_DB_ID}__LOOKUP__${id}`);
+
+/** Updates fields of one existing record (same endpoint as the editor's "Modify" dialog). */
+export async function modifyThing(page, id, newValues) {
+  const res = await page.evaluate(async ({ app, thing, newValues }) => {
+    const r = await fetch("https://bubble.io/appeditor/modify_thing", {
+      method: "POST", headers: { "content-type": "application/json" },
+      body: JSON.stringify({ appname: app, app_version: "test", thing, new_values: newValues }),
+    });
+    return r.status;
+  }, { app: APP, thing: ref(id), newValues });
+  if (res !== 200) throw new Error(`modify_thing ${id} → ${res}`);
+}

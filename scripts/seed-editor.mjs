@@ -3,7 +3,7 @@
 //   node scripts/seed-editor.mjs
 import fs from "node:fs";
 import { editorPage } from "./bubble-editor.mjs";
-import { createThing, listThings } from "./bubble-data.mjs";
+import { createThing, listThings, ref } from "./bubble-data.mjs";
 
 const APP_UID = "1348695171700984260"; // editor-internal app id used in delete_thing references
 const data = JSON.parse(fs.readFileSync(new URL("../bubble/bookleaf_sample_data.json", import.meta.url)));
@@ -36,7 +36,7 @@ for (const a of data.authors) {
   for (const b of a.books) {
     const published = /published/i.test(b.status);
     await createThing(page, "book", {
-      book_code_text: b.book_id, author_custom_author: authorIds[a.author_id], owner_email_text: a.email,
+      book_code_text: b.book_id, author_custom_author: ref(authorIds[a.author_id]), owner_email_text: a.email,
       title_text: b.title, isbn_text: b.isbn, genre_text: b.genre,
       stage_option_book_stage: slug(b.status.replace(/^In Production\s*-\s*/i, "")),
       status_text_text: b.status, is_published_boolean: published,
@@ -58,7 +58,7 @@ let payouts = 0;
 for (const a of data.authors) {
   for (const b of a.books.filter((x) => x.royalty_paid > 0 && x.last_royalty_payout_date)) {
     await createThing(page, "payout", {
-      author_custom_author: authorIds[a.author_id], book_custom_book: bookIds[b.book_id], owner_email_text: a.email,
+      author_custom_author: ref(authorIds[a.author_id]), book_custom_book: ref(bookIds[b.book_id]), owner_email_text: a.email,
       amount_number: b.royalty_paid, payout_date_date: day(b.last_royalty_payout_date),
       note_text: "Cumulative royalty paid to date (backfilled from dataset)", is_backfill_boolean: true,
     });

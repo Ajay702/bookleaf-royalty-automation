@@ -43,9 +43,13 @@ const ifTrue = (expr) => ({
   },
   options: {},
 });
+// Every reply carries the same 12 keys (blank when unused). Bubble's API Connector learns the response
+// shape from one sample call, so a key missing from that sample could never be read later.
+export const RESPONSE_SHAPE = { status: "", subject: "", body: "", email_sent: false, email_recipient: "", error_message: "",
+  completed_at: "", model: "", tokens_used: 0, execution_id: "", failed_step: "", duplicate_of: "" };
 const respond = (name, pos, codeExpr) => node(name, "n8n-nodes-base.respondToWebhook", 1.1, pos, {
   respondWith: "json",
-  responseBody: "={{ JSON.stringify($json.response) }}",
+  responseBody: `={{ JSON.stringify(Object.assign(${JSON.stringify(RESPONSE_SHAPE)}, $json.response)) }}`,
   options: { responseCode: `={{ $json.http }}` },
 });
 
@@ -92,7 +96,8 @@ const windowMs = Number(${cfg("DEDUPE_WINDOW_SECONDS")}) * 1000;
 for (const [k, v] of Object.entries(store.locks)) if (now - v.at > windowMs) delete store.locks[k];
 const held = store.locks[meta.author_id];
 if (held && held.log_id !== meta.log_id) {
-  return reject(409, 'Duplicate', 'A summary for this author is already being generated (log ' + held.log_id + ')', { duplicate_of: held.log_id });
+  const why = held.sent ? 'was already sent ' + Math.round((now - held.at) / 1000) + ' s ago' : 'is already being generated';
+  return reject(409, 'Duplicate', 'A summary for this author ' + why + ' (log ' + held.log_id + ')', { duplicate_of: held.log_id });
 }
 store.locks[meta.author_id] = { at: now, log_id: meta.log_id };
 return [{ json: { ok: true, ...meta, author, books, payouts, as_of: req.as_of || null } }];`));
@@ -178,10 +183,18 @@ return [{ json: { http: 200, response: {
   completed_at: new Date().toISOString(), execution_id: String($execution.id),
 } } }];`));
 
-node("Release author lock", "n8n-nodes-base.code", 2, [2200, 260], code(`// Free the author slot once a run is finished, so a deliberate retry is not treated as a duplicate.
+node("Release author lock", "n8n-nodes-base.code", 2, [2200, 260], code(`// After a successful send, keep the author's slot for the dedupe window so a double click or a client
+// retry within it gets 409 instead of a second email. After a failure, free it so a deliberate retry works.
+// n8n writes static data back when an execution ends, so two requests arriving in the same instant can both
+// pass; Bubble's in-flight log guard covers that case.
 const store = $getWorkflowStaticData('global');
+store.locks = store.locks || {};
 const { author_id, log_id } = $('Validate & de-duplicate').first().json;
-if (store.locks && store.locks[author_id] && store.locks[author_id].log_id === log_id) delete store.locks[author_id];
+const r = $input.first().json.response || {};
+const ok = r.status === 'Success' && r.email_sent;
+const mine = store.locks[author_id] && store.locks[author_id].log_id === log_id;
+if (ok) store.locks[author_id] = { at: Date.now(), log_id, sent: true };
+else if (mine) delete store.locks[author_id];
 return $input.all();`));
 respond("Respond: result", [2420, 260]);
 

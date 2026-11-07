@@ -48,6 +48,22 @@ test("validate: second request for the same author is a 409 duplicate", () => {
   assert.equal(dup.response.duplicate_of, "L1");
 });
 
+test("release: success keeps the author blocked for the window, failure frees it", () => {
+  const release = (store, logId, response) => run("Release author lock",
+    { "Validate & de-duplicate": { author_id: "bubble-AUTH001", log_id: logId } }, { input: { response }, store });
+  const sent = {};
+  validate(bubblePayload("AUTH001", "L1"), sent);
+  release(sent, "L1", { status: "Success", email_sent: true });
+  const again = validate(bubblePayload("AUTH001", "L2"), sent);
+  assert.equal(again.http, 409);
+  assert.match(again.response.error_message, /already sent/);
+
+  const failed = {};
+  validate(bubblePayload("AUTH001", "L1"), failed);
+  release(failed, "L1", { status: "Failed" });
+  assert.equal(validate(bubblePayload("AUTH001", "L2"), failed).ok, true);
+});
+
 test("full chain with a mocked Claude reply returns Success to Bubble", () => {
   const v = validate(bubblePayload("AUTH007"));
   const built = run("Build royalty facts", { Config: config, "Validate & de-duplicate": v });

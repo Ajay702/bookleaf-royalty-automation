@@ -80,7 +80,7 @@
       "parameters": {
         "mode": "runOnceForAllItems",
         "language": "javaScript",
-        "jsCode": "// 1) Validate the payload Bubble sent. 2) Drop duplicates: same author already being processed.\n// Workflow static data persists between production executions, so it serves as a small lock store.\nconst req = $('Webhook: royalty summary request').first().json.body || {};\nconst parse = (v) => (typeof v === 'string' ? JSON.parse(v || '[]') : (v || []));\nconst meta = { log_id: req.log_id, author_id: req.author_id, mode: req.mode || 'single', triggered_by: req.triggered_by || 'unknown' };\nconst reject = (http, status, error_message, extra = {}) => [{ json: { ok: false, http, ...meta,\n  response: { status, error_message, failed_step: 'Validate & de-duplicate', completed_at: new Date().toISOString(), execution_id: String($execution.id), ...extra } } }];\n\nlet books, payouts;\ntry { books = parse(req.books); payouts = parse(req.payouts); }\ncatch (e) { return reject(400, 'Failed', 'books/payouts are not valid JSON: ' + e.message); }\nconst author = req.author || {};\nconst missing = ['log_id', 'author_id'].filter((k) => !req[k]);\nif (!author.name) missing.push('author.name');\nif (!Array.isArray(books) || books.length === 0) missing.push('books');\nif (missing.length) return reject(400, 'Failed', 'Missing or empty: ' + missing.join(', '));\n\nconst store = $getWorkflowStaticData('global');\nstore.locks = store.locks || {};\nconst now = Date.now();\nconst windowMs = Number($('Config').first().json.DEDUPE_WINDOW_SECONDS) * 1000;\nfor (const [k, v] of Object.entries(store.locks)) if (now - v.at > windowMs) delete store.locks[k];\nconst held = store.locks[meta.author_id];\nif (held && held.log_id !== meta.log_id) {\n  return reject(409, 'Duplicate', 'A summary for this author is already being generated (log ' + held.log_id + ')', { duplicate_of: held.log_id });\n}\nstore.locks[meta.author_id] = { at: now, log_id: meta.log_id };\nreturn [{ json: { ok: true, ...meta, author, books, payouts, as_of: req.as_of || null } }];"
+        "jsCode": "// 1) Validate the payload Bubble sent. 2) Drop duplicates: same author already being processed.\n// Workflow static data persists between production executions, so it serves as a small lock store.\nconst req = $('Webhook: royalty summary request').first().json.body || {};\nconst parse = (v) => (typeof v === 'string' ? JSON.parse(v || '[]') : (v || []));\nconst meta = { log_id: req.log_id, author_id: req.author_id, mode: req.mode || 'single', triggered_by: req.triggered_by || 'unknown' };\nconst reject = (http, status, error_message, extra = {}) => [{ json: { ok: false, http, ...meta,\n  response: { status, error_message, failed_step: 'Validate & de-duplicate', completed_at: new Date().toISOString(), execution_id: String($execution.id), ...extra } } }];\n\nlet books, payouts;\ntry { books = parse(req.books); payouts = parse(req.payouts); }\ncatch (e) { return reject(400, 'Failed', 'books/payouts are not valid JSON: ' + e.message); }\nconst author = req.author || {};\nconst missing = ['log_id', 'author_id'].filter((k) => !req[k]);\nif (!author.name) missing.push('author.name');\nif (!Array.isArray(books) || books.length === 0) missing.push('books');\nif (missing.length) return reject(400, 'Failed', 'Missing or empty: ' + missing.join(', '));\n\nconst store = $getWorkflowStaticData('global');\nstore.locks = store.locks || {};\nconst now = Date.now();\nconst windowMs = Number($('Config').first().json.DEDUPE_WINDOW_SECONDS) * 1000;\nfor (const [k, v] of Object.entries(store.locks)) if (now - v.at > windowMs) delete store.locks[k];\nconst held = store.locks[meta.author_id];\nif (held && held.log_id !== meta.log_id) {\n  const why = held.sent ? 'was already sent ' + Math.round((now - held.at) / 1000) + ' s ago' : 'is already being generated';\n  return reject(409, 'Duplicate', 'A summary for this author ' + why + ' (log ' + held.log_id + ')', { duplicate_of: held.log_id });\n}\nstore.locks[meta.author_id] = { at: now, log_id: meta.log_id };\nreturn [{ json: { ok: true, ...meta, author, books, payouts, as_of: req.as_of || null } }];"
       },
       "id": "00000000-0000-4000-8000-000000000003",
       "name": "Validate & de-duplicate",
@@ -128,7 +128,7 @@
     {
       "parameters": {
         "respondWith": "json",
-        "responseBody": "={{ JSON.stringify($json.response) }}",
+        "responseBody": "={{ JSON.stringify(Object.assign({\"status\":\"\",\"subject\":\"\",\"body\":\"\",\"email_sent\":false,\"email_recipient\":\"\",\"error_message\":\"\",\"completed_at\":\"\",\"model\":\"\",\"tokens_used\":0,\"execution_id\":\"\",\"failed_step\":\"\",\"duplicate_of\":\"\"}, $json.response)) }}",
         "options": {
           "responseCode": "={{ $json.http }}"
         }
@@ -312,7 +312,7 @@
       "parameters": {
         "mode": "runOnceForAllItems",
         "language": "javaScript",
-        "jsCode": "// Free the author slot once a run is finished, so a deliberate retry is not treated as a duplicate.\nconst store = $getWorkflowStaticData('global');\nconst { author_id, log_id } = $('Validate & de-duplicate').first().json;\nif (store.locks && store.locks[author_id] && store.locks[author_id].log_id === log_id) delete store.locks[author_id];\nreturn $input.all();"
+        "jsCode": "// After a successful send, keep the author's slot for the dedupe window so a double click or a client\n// retry within it gets 409 instead of a second email. After a failure, free it so a deliberate retry works.\n// n8n writes static data back when an execution ends, so two requests arriving in the same instant can both\n// pass; Bubble's in-flight log guard covers that case.\nconst store = $getWorkflowStaticData('global');\nstore.locks = store.locks || {};\nconst { author_id, log_id } = $('Validate & de-duplicate').first().json;\nconst r = $input.first().json.response || {};\nconst ok = r.status === 'Success' && r.email_sent;\nconst mine = store.locks[author_id] && store.locks[author_id].log_id === log_id;\nif (ok) store.locks[author_id] = { at: Date.now(), log_id, sent: true };\nelse if (mine) delete store.locks[author_id];\nreturn $input.all();"
       },
       "id": "00000000-0000-4000-8000-000000000013",
       "name": "Release author lock",
@@ -326,7 +326,7 @@
     {
       "parameters": {
         "respondWith": "json",
-        "responseBody": "={{ JSON.stringify($json.response) }}",
+        "responseBody": "={{ JSON.stringify(Object.assign({\"status\":\"\",\"subject\":\"\",\"body\":\"\",\"email_sent\":false,\"email_recipient\":\"\",\"error_message\":\"\",\"completed_at\":\"\",\"model\":\"\",\"tokens_used\":0,\"execution_id\":\"\",\"failed_step\":\"\",\"duplicate_of\":\"\"}, $json.response)) }}",
         "options": {
           "responseCode": "={{ $json.http }}"
         }
