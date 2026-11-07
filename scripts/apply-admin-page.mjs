@@ -331,7 +331,8 @@ wf("adm_wf_send_summary", "Send summary via n8n", "CustomEvent", {
     ["error_message_text", T("n8n request failed (HTTP ", res("error.status_code"), "): ", res("error.body"))],
     ["completed_at_date", now()], ["in_flight_boolean", false],
   ], chain(step("adm_wf_send_summary_a1"), "is_not_empty", and(res("returned_an_error")))),
-  change(step("adm_wf_send_summary_a1"), [["status_option_notify_status", opt("notify_status", "duplicate")]],
+  change(step("adm_wf_send_summary_a1"), [["status_option_notify_status", opt("notify_status", "duplicate")],
+    ["error_message_text", T("Skipped: a summary was already sent to this author in the last 2 minutes.")]],
     chain(step("adm_wf_send_summary_a1"), "is_not_empty", and(chain(res("error.status_code"), eq(409))))),
 ]);
 
