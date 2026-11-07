@@ -1,4 +1,8 @@
-# Status: pick up here (paused 7 Nov 2026)
+# Status: pick up here (updated 7 Nov 2026, day 2)
+
+**Day 2 done:** seed (10 authors, 18 books, 12 payouts), n8n reworked + 10 tests + real emails, pages index/dashboard/admin (0 editor issues), API connector payload, README.
+**Blocked on user:** n8n sign-in + 3 credentials, webhook secret in Bubble API connector, DEMO_RECIPIENT, sign up priya.sharma@email.com + admin@bookleaf.test. Then: import workflow, set admin role, initialize API call, end-to-end test, recording.
+
 
 ## Decided
 - **Bubble Free plan, no trial.** On Free, inbound calls to the Data API and Workflow API return 401 (tested). The design is therefore:
