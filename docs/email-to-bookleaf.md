@@ -10,9 +10,9 @@ I've completed Technical Assignment 2: the Author Royalty Dashboard in Bubble, w
 - Admin login: admin@bookleaf.test / Leaf-TdCKOvja-7
 - Author login: priya.sharma@email.com / Leaf-TdCKOvja-7
 
-**Bubble editor:** https://bubble.io/page?id=ajayraghav20047 (EDITOR_ACCESS_NOTE)
+**Bubble editor:** https://bubble.io/page?id=ajayraghav20047 (set to "Everyone can view", so you can open the editor without an invite; happy to add a reviewer as a collaborator too)
 
-**Source, n8n workflow JSON and documentation (public repo):** REPO_URL
+**Source, n8n workflow JSON and documentation (public repo):** https://github.com/Ajay702/bookleaf-royalty-automation
 - n8n workflow export: `n8n/bookleaf-royalty-summary.workflow.json` (plus the error-alert workflow)
 - README: schema, Bubble ↔ n8n integration, prompt strategy, error handling, and what I learned
 
