@@ -68,6 +68,8 @@ The author's payout status is Overdue if any book is overdue, else Pending if an
 | NotificationLog, AppSetting | nothing | all | nothing |
 | User | own record | all | nothing |
 
+**Verified live** (not just in the editor): logged in as Priya Sharma, the server sent her browser exactly 1 Author, 2 Books and 2 Payouts, all hers, and 0 notification logs; opening `/admin` redirects her to her dashboard. As admin, all 10 authors and 18 books load.
+
 Ownership is by email because on Free there's no server-side step to link a new User to an Author record. Authors "claim" their account by signing up with the email BookLeaf has on file. In production I'd add email confirmation before the link takes effect (Bubble's *send confirmation email*); the dataset emails aren't real, so it's off for the demo.
 
 ---

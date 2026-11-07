@@ -2,7 +2,8 @@
 
 **Day 3 (7 Nov):** n8n live (3 credentials, both workflows imported + published, error workflow linked). Bubble ↔ n8n verified end to end from the admin page: Success, double-click, Duplicate (409), forced failure. Fixed: seed links (relink-seed.mjs), API response keys (body.*), Duplicate-guard order, n8n draft vs published.
 **Bulk verified:** 9 authors with pending royalties → 9 Success logs in ~80 s, Farhan (fully paid) correctly skipped.
-**Next:** sign up priya.sharma@email.com (author view), privacy check as Priya, n8n screenshot in README, recording, collaborator invite, send docs/email-to-bookleaf.md.
+**Author + privacy verified:** Priya sees only her 1 author/2 books/2 payouts; /admin redirects her.
+**Next:** n8n screenshot in README, recording, collaborator invite, send docs/email-to-bookleaf.md.
 
 ## Decided
 - **Bubble Free plan, no trial.** On Free, inbound calls to the Data API and Workflow API return 401 (tested). The design is therefore:
