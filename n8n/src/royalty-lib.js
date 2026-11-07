@@ -90,7 +90,8 @@ export function normaliseBook(raw) {
     pending: num(raw.royalty_pending) ?? 0,
     lastPayout: toDay(raw.last_payout_date ?? raw.last_royalty_payout_date),
     printPartner: raw.print_partner ?? null,
-    availableOn: Array.isArray(raw.available_on) ? raw.available_on
+    // null = not sent (the line is then omitted), [] = sent but not listed anywhere
+    availableOn: raw.available_on === undefined ? null : Array.isArray(raw.available_on) ? raw.available_on
       : String(raw.available_on ?? "").split(",").map((x) => x.trim()).filter(Boolean),
   };
 }
@@ -159,8 +160,8 @@ export function buildFacts({ author, books: rawBooks, payouts = [], today: today
       `Published book: "${b.title}" — ${b.genre}, published ${longDate(b.publicationDate)}, MRP ${rupees(b.mrp)}, ${rupees(b.royaltyPerCopy)} royalty per copy`,
       `  ${b.copiesSold} copies sold; royalty earned ${rupees(b.earned)}, paid ${rupees(b.paid)}, pending ${rupees(b.pending)}; ` +
       `last payout ${b.lastPayout ? longDate(b.lastPayout) : "none yet"}; status: ${statuses[i]}`,
-      `  Available on: ${b.availableOn.join(", ") || "not listed"}`,
     );
+    if (b.availableOn) lines.push(`  Available on: ${b.availableOn.join(", ") || "not listed on any platform yet"}`);
   });
   inProduction.forEach((b) => lines.push(`In production: ${productionLine(b)}`));
   lines.push(

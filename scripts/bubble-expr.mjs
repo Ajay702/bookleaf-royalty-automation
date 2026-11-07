@@ -10,7 +10,9 @@ export function chain(base, ...steps) {
     const m = typeof s === "string" ? msg(s) : s;
     node = node ? { ...m, "%n": node } : m;
   }
-  return node ? { ...base, "%n": node } : base;
+  if (!node) return base;
+  const attach = (b) => (b["%n"] ? { ...b, "%n": attach(b["%n"]) } : { ...b, "%n": node });
+  return attach(base); // append after existing steps, never overwrite them
 }
 
 export const op = {
