@@ -42,3 +42,15 @@ test("validation catches invented amounts and missing name", () => {
   assert.equal(bad.ok, false);
   assert.equal(bad.problems.length, 3);
 });
+
+test("parses Bubble's text rendering of numbers, dates and lists", () => {
+  const b = normaliseBook({ title: "X", status_text: "Published & Live", copies_sold: "1,203", royalty_pending: "7,744",
+    royalty_earned: "57,744", royalty_paid: "50,000", mrp: "499", publication_date: "5/22/2024 12:00 am",
+    last_payout_date: "Nov 15, 2025 12:00 am", available_on: "Amazon India, Flipkart" });
+  assert.equal(b.copiesSold, 1203);
+  assert.equal(b.pending, 7744);
+  assert.equal(b.publicationDate.toISOString().slice(0, 10), "2024-05-22");
+  assert.equal(b.lastPayout.toISOString().slice(0, 10), "2025-11-15");
+  assert.deepEqual(b.availableOn, ["Amazon India", "Flipkart"]);
+  assert.equal(normaliseBook({ status: "In Production - Typesetting", last_payout_date: "" }).lastPayout, null);
+});

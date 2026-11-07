@@ -12,11 +12,20 @@ export const PRODUCTION_STAGES = [
 
 const DAY_MS = 86400000;
 
+// Accepts ISO strings, epoch ms, Date objects, and Bubble's default text rendering of a date
+// inside :format as text (e.g. "7/5/2024 12:00 am" or "Jul 5, 2024 12:00 am").
 export function toDay(value) {
-  if (!value) return null;
+  if (value === null || value === undefined || value === "") return null;
+  let local = false;
+  if (typeof value === "string") {
+    value = value.trim().replace(/\s+\d{1,2}:\d{2}(:\d{2})?\s*(am|pm)?$/i, "");
+    local = !/^\d{4}-\d{2}-\d{2}/.test(value); // "5/22/2024" is a calendar date, not a UTC instant
+  }
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return null;
-  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
+  return local
+    ? new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()))
+    : new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
 }
 
 export const isoDay = (d) => (d ? d.toISOString().slice(0, 10) : null);
@@ -59,6 +68,9 @@ export function payoutSchedule(today) {
 }
 
 /** Accepts either a Bubble Data API record or the raw sample-data shape and returns one shape. */
+// Numbers from Bubble text rendering may carry thousands separators ("1,203") or be empty.
+const num = (v) => (v === null || v === undefined || v === "" ? null : Number(String(v).replace(/[,₹\s]/g, "")));
+
 export function normaliseBook(raw) {
   const status = String(raw.status ?? raw.status_text ?? "");
   const published = raw.is_published === true || /published/i.test(status);
@@ -70,15 +82,16 @@ export function normaliseBook(raw) {
     status,
     isPublished: published,
     publicationDate: toDay(raw.publication_date),
-    mrp: raw.mrp ?? null,
-    royaltyPerCopy: raw.royalty_per_copy ?? raw.author_royalty_per_copy ?? null,
-    copiesSold: Number(raw.copies_sold ?? raw.total_copies_sold ?? 0),
-    earned: Number(raw.royalty_earned ?? raw.total_royalty_earned ?? 0),
-    paid: Number(raw.royalty_paid ?? 0),
-    pending: Number(raw.royalty_pending ?? 0),
+    mrp: num(raw.mrp),
+    royaltyPerCopy: num(raw.royalty_per_copy ?? raw.author_royalty_per_copy),
+    copiesSold: num(raw.copies_sold ?? raw.total_copies_sold) ?? 0,
+    earned: num(raw.royalty_earned ?? raw.total_royalty_earned) ?? 0,
+    paid: num(raw.royalty_paid) ?? 0,
+    pending: num(raw.royalty_pending) ?? 0,
     lastPayout: toDay(raw.last_payout_date ?? raw.last_royalty_payout_date),
     printPartner: raw.print_partner ?? null,
-    availableOn: Array.isArray(raw.available_on) ? raw.available_on : [],
+    availableOn: Array.isArray(raw.available_on) ? raw.available_on
+      : String(raw.available_on ?? "").split(",").map((x) => x.trim()).filter(Boolean),
   };
 }
 
