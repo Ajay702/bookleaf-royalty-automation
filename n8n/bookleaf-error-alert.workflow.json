@@ -14,11 +14,11 @@
     },
     {
       "parameters": {
-        "fromEmail": "BookLeaf Automations <REPLACE@example.com>",
+        "fromEmail": "BookLeaf Automations <REPLACE-sender@example.com>",
         "toEmail": "REPLACE-ops-inbox@example.com",
         "subject": "=n8n failure: {{ $json.workflow.name }}",
         "emailFormat": "text",
-        "text": "=Workflow: {{ $json.workflow.name }}\nFailed node: {{ $json.execution.lastNodeExecuted }}\nError: {{ $json.execution.error.message }}\nExecution: {{ $json.execution.url }}\n\nAny Notification Log row still 'Processing' for this run will show as 'Timed out' in Bubble after 10 minutes and can be retried.",
+        "text": "=Workflow: {{ $json.workflow.name }}\nFailed node: {{ $json.execution.lastNodeExecuted }}\nError: {{ $json.execution.error.message }}\nExecution: {{ $json.execution.url }}\n\nBubble marks the matching Notification Log row Failed when its request errors or times out.",
         "options": {
           "appendAttribution": false
         }

@@ -165,7 +165,7 @@ export function buildFacts({ author, books: rawBooks, payouts = [], today: today
   const scenarioNote = {
     no_published_books: "SCENARIO: no published books yet — there are no royalties to report; focus on the production update.",
     all_paid: "SCENARIO: every published book is fully paid up — acknowledge this positively.",
-    below_threshold: `SCENARIO: pending total is below the ${rupees(PAYOUT_THRESHOLD)} minimum payout threshold, so it rolls over to a later quarter until it crosses the threshold.`,
+    below_threshold: `SCENARIO: pending total is below the ${rupees(PAYOUT_THRESHOLD)} minimum payout threshold, so it rolls over to a later quarter until it crosses the threshold. Do not suggest it will be paid at the next payout deadline.`,
     pending_in_cycle: `SCENARIO: pending royalties are within the normal cycle — they are expected with the payout due by ${longDate(schedule.nextDue.payoutBy)}.`,
     overdue: `SCENARIO: OVERDUE — royalties are pending and the last payout (or, for never-paid books, the publication date) is more than ${OVERDUE_DAYS} days ago` +
       (neverPaid.length ? ` (${neverPaid.map((b) => `"${b.title}"`).join(", ")} ${neverPaid.length === 1 ? "has" : "have"} never had a payout)` : "") +
